@@ -15,4 +15,10 @@ export const appConfig = {
   database: {
     url: requireEnv("DATABASE_URL"),
   },
+  auth: {
+    // Secret de signature des sessions NextAuth (JWT).
+    nextAuthSecret: requireEnv("NEXTAUTH_SECRET"),
+    // Clé AES-256-GCM (32 octets, hex) de chiffrement du secret TOTP — cf. CLAUDE.md.
+    twoFactorEncryptionKey: requireEnv("TWO_FACTOR_ENCRYPTION_KEY"),
+  },
 } as const;
