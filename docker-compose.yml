@@ -1,0 +1,18 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: options-tracker-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: options_tracker
+      POSTGRES_PASSWORD: options_tracker
+      POSTGRES_DB: options_tracker
+    ports:
+      # 5433 en hôte pour éviter un conflit avec une éventuelle instance
+      # PostgreSQL locale déjà présente sur le port 5432 de la machine.
+      - "5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+volumes:
+  postgres-data:

@@ -40,11 +40,11 @@ Chaque lot précise :
 
 ### Critères d'acceptation
 
-- [ ] `npm run dev` démarre sans erreur
-- [ ] Le conteneur PostgreSQL démarre via `docker-compose up`
-- [ ] `npx prisma migrate dev` s'exécute avec succès sur le schéma initial
-- [ ] La structure de dossiers correspond exactement à celle de la section 3
-- [ ] Une page d'accueil minimale s'affiche en thème sombre
+- [x] `npm run dev` démarre sans erreur
+- [x] Le conteneur PostgreSQL démarre via `docker-compose up`
+- [x] `npx prisma migrate dev` s'exécute avec succès sur le schéma initial
+- [x] La structure de dossiers correspond exactement à celle de la section 3
+- [x] Une page d'accueil minimale s'affiche en thème sombre
 
 ### Cas de test
 
