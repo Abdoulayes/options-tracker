@@ -74,11 +74,11 @@ Chaque lot précise :
 
 ### Critères d'acceptation
 
-- [ ] Un utilisateur peut créer un compte et configurer son 2FA via QR code
-- [ ] La connexion échoue sans code TOTP valide
-- [ ] Le secret TOTP n'est jamais visible en clair en base de données
-- [ ] Après 5 tentatives échouées, la vérification est bloquée temporairement
-- [ ] Toute route du groupe `(dashboard)` redirige vers le login si la session n'est pas complète
+- [x] Un utilisateur peut créer un compte et configurer son 2FA via QR code
+- [x] La connexion échoue sans code TOTP valide
+- [x] Le secret TOTP n'est jamais visible en clair en base de données
+- [x] Après 5 tentatives échouées, la vérification est bloquée temporairement
+- [x] Toute route du groupe `(dashboard)` redirige vers le login si la session n'est pas complète
 
 ### Cas de test
 
