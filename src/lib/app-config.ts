@@ -21,4 +21,9 @@ export const appConfig = {
     // Clé AES-256-GCM (32 octets, hex) de chiffrement du secret TOTP — cf. CLAUDE.md.
     twoFactorEncryptionKey: requireEnv("TWO_FACTOR_ENCRYPTION_KEY"),
   },
+  ibkr: {
+    // URL du Client Portal Gateway IBKR (local en Phase 1/2, VPS dédié en
+    // Phase 3) — jamais codée en dur (cf. CLAUDE.md et spec technique 6.3).
+    gatewayUrl: requireEnv("IBKR_GATEWAY_URL"),
+  },
 } as const;
