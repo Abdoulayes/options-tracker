@@ -5,6 +5,7 @@ import type {
   GatewayResult,
   IBKRAccountsResponse,
   IBKRAuthStatus,
+  IBKRSecdefSearchResult,
   IBKRTickleResponse,
 } from "@/lib/ibkr-gateway/types";
 
@@ -24,14 +25,18 @@ const insecureDevAgent =
 
 async function callGateway<T>(
   path: string,
-  init?: { method?: "GET" | "POST" },
+  init?: { method?: "GET" | "POST"; body?: unknown },
 ): Promise<GatewayResult<T>> {
   const start = performance.now();
 
   try {
     const response = await undiciFetch(`${appConfig.ibkr.gatewayUrl}${path}`, {
       method: init?.method ?? "GET",
-      headers: { Accept: "application/json" },
+      headers: {
+        Accept: "application/json",
+        ...(init?.body ? { "Content-Type": "application/json" } : {}),
+      },
+      body: init?.body ? JSON.stringify(init.body) : undefined,
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       dispatcher: insecureDevAgent,
     });
@@ -93,4 +98,18 @@ export function getAccounts(): Promise<GatewayResult<IBKRAccountsResponse>> {
   return callGateway<IBKRAccountsResponse>("/v1/api/iserver/accounts", {
     method: "GET",
   });
+}
+
+// POST /v1/api/iserver/secdef/search — résolution d'un symbole en conid pour
+// l'autocomplete d'ajout de ticker (Lot 3, spec technique section 7).
+export function searchTicker(
+  symbol: string,
+): Promise<GatewayResult<IBKRSecdefSearchResult[]>> {
+  return callGateway<IBKRSecdefSearchResult[]>(
+    "/v1/api/iserver/secdef/search",
+    {
+      method: "POST",
+      body: { symbol, name: false, secType: "STK" },
+    },
+  );
 }

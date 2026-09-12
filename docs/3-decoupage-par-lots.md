@@ -155,10 +155,10 @@ Le passage à un compte réel en fin de parcours ne nécessite qu'un changement 
 
 ### Critères d'acceptation
 
-- [ ] Un utilisateur peut créer plusieurs watchlists et y ajouter des tickers
-- [ ] L'ajout d'un ticker déjà présent dans la même watchlist est rejeté
-- [ ] L'import CSV ajoute correctement les tickers avec gestion des doublons
-- [ ] Les tags et notes sont persistés et réaffichés après rechargement
+- [x] Un utilisateur peut créer plusieurs watchlists et y ajouter des tickers
+- [x] L'ajout d'un ticker déjà présent dans la même watchlist est rejeté
+- [x] L'import CSV ajoute correctement les tickers avec gestion des doublons
+- [x] Les tags et notes sont persistés et réaffichés après rechargement
 
 ### Cas de test
 

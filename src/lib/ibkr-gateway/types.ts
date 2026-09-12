@@ -22,6 +22,16 @@ export type IBKRAccountsResponse = {
   selectedAccount?: string;
 };
 
+// POST /v1/api/iserver/secdef/search — recherche de ticker (autocomplete,
+// Lot 3). Réponse Gateway volontairement réduite aux champs exploités.
+export type IBKRSecdefSearchResult = {
+  conid: string;
+  symbol: string;
+  companyHeader?: string;
+  companyName?: string;
+  sections?: { secType: string }[];
+};
+
 // Erreurs normalisées côté client : ne jamais propager le corps brut d'une
 // erreur Gateway au frontend (spec technique section 7).
 export type GatewayErrorKind =
