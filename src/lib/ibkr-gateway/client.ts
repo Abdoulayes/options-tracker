@@ -43,6 +43,13 @@ async function callGateway<T>(
     const latencyMs = Math.round(performance.now() - start);
 
     if (!response.ok) {
+      // Le corps brut n'est jamais renvoyé au frontend (spec technique
+      // section 7) mais on le journalise côté serveur pour le diagnostic —
+      // aucune donnée financière/secrète dans ce contexte, seulement le
+      // détail de rejet de la requête par le Gateway.
+      const rawBody = await response.text().catch(() => "");
+      console.error(`[ibkr-gateway] ${path} → ${response.status} : ${rawBody}`);
+
       const error: GatewayError = {
         kind: "http_error",
         message: `Le Gateway IBKR a répondu avec le statut ${response.status}.`,

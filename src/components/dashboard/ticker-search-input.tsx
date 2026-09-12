@@ -19,6 +19,7 @@ type Props = {
 export function TickerSearchInput({ onSelect }: Props) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<TickerSearchResult[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
@@ -35,17 +36,24 @@ export function TickerSearchInput({ onSelect }: Props) {
     const timer = setTimeout(async () => {
       if (cancelled) return;
       setIsLoading(true);
+      setError(null);
       try {
         const response = await fetch(
           `/api/ibkr/ticker-search?q=${encodeURIComponent(trimmedQuery)}`,
         );
         const data = await response.json();
         if (!cancelled) {
-          setResults(response.ok ? data.results : []);
+          if (response.ok) {
+            setResults(data.results);
+          } else {
+            setResults([]);
+            setError(data.message ?? "Recherche impossible.");
+          }
         }
       } catch {
         if (!cancelled) {
           setResults([]);
+          setError("Recherche impossible (réseau).");
         }
       } finally {
         if (!cancelled) {
@@ -66,7 +74,7 @@ export function TickerSearchInput({ onSelect }: Props) {
         type="text"
         value={query}
         onChange={(event) => {
-          setQuery(event.target.value);
+          setQuery(event.target.value.toUpperCase());
           setDismissed(false);
         }}
         placeholder="Rechercher un symbole (ex : AAPL)"
@@ -80,12 +88,16 @@ export function TickerSearchInput({ onSelect }: Props) {
               Recherche…
             </p>
           )}
-          {!isLoading && results.length === 0 && (
+          {!isLoading && error && (
+            <p className="px-2.5 py-2 text-xs text-destructive">{error}</p>
+          )}
+          {!isLoading && !error && results.length === 0 && (
             <p className="px-2.5 py-2 text-xs text-muted-foreground">
               Aucun résultat.
             </p>
           )}
           {!isLoading &&
+            !error &&
             results.map((result) => (
               <button
                 key={result.conid}
