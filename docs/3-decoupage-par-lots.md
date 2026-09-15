@@ -214,10 +214,10 @@ Le passage à un compte réel en fin de parcours ne nécessite qu'un changement 
 
 ### Critères d'acceptation
 
-- [ ] La fonction de calcul est 100% pure (aucun effet de bord, aucun appel réseau/DB)
-- [ ] La couverture de test de cette fonction est proche de l'exhaustivité (cf. section 14)
-- [ ] Le Sheet panel affiche toutes les métriques listées en section 9.1 de la spec fonctionnelle
-- [ ] Le diagramme P/L reflète correctement le breakeven et les zones profit/perte
+- [x] La fonction de calcul est 100% pure (aucun effet de bord, aucun appel réseau/DB)
+- [x] La couverture de test de cette fonction est proche de l'exhaustivité (cf. section 14)
+- [x] Le Sheet panel affiche toutes les métriques listées en section 9.1 de la spec fonctionnelle
+- [x] Le diagramme P/L reflète correctement le breakeven et les zones profit/perte
 
 ### Cas de test **(obligatoires avant de considérer le lot terminé)**
 
