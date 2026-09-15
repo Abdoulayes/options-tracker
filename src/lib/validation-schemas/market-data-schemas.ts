@@ -39,5 +39,14 @@ export const optionsChainQuerySchema = z.object({
   maturityDate: maturityDateSchema.optional(),
 });
 
+export const optionQuoteQuerySchema = z.object({
+  conid: conidSchema,
+  expiration: expirationSchema,
+  strike: z.coerce.number().positive("Strike invalide."),
+  right: z.enum(["C", "P"]),
+  maturityDate: maturityDateSchema,
+});
+
 export type MarketDataQuery = z.infer<typeof marketDataQuerySchema>;
 export type OptionsChainQuery = z.infer<typeof optionsChainQuerySchema>;
+export type OptionQuoteQuery = z.infer<typeof optionQuoteQuerySchema>;

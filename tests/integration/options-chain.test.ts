@@ -42,6 +42,17 @@ async function cleanup() {
   await prisma.user.deleteMany({ where: { email: TEST_EMAIL } });
 }
 
+// Dates d'échéance relatives à "aujourd'hui" (format YYYYMMDD) plutôt que
+// des dates figées : depuis que getOptionsChain filtre les échéances déjà
+// passées (cf. options-chain-service.ts), une date écrite en dur dans un
+// fixture finit toujours par expirer et faire échouer le test.
+function futureMaturityDate(daysFromNow: number): string {
+  return new Date(Date.now() + daysFromNow * 86_400_000)
+    .toISOString()
+    .slice(0, 10)
+    .replace(/-/g, "");
+}
+
 describe("GET /api/ibkr/options-chain (Lot 4)", () => {
   beforeEach(async () => {
     await cleanup();
@@ -53,6 +64,7 @@ describe("GET /api/ibkr/options-chain (Lot 4)", () => {
   });
 
   it("assemble la chaîne d'options à partir d'une réponse Gateway simulée", async () => {
+    const maturityDate = futureMaturityDate(7);
     const user = await createUser(TEST_EMAIL, "correct-horse-battery-1");
     mockedAuth.mockResolvedValue({
       user: { id: user.id, email: user.email },
@@ -85,8 +97,8 @@ describe("GET /api/ibkr/options-chain (Lot 4)", () => {
       ok: true,
       latencyMs: 1,
       data: [
-        { conid: 111, right: "P", strike: 150, maturityDate: "20260918" },
-        { conid: 112, right: "C", strike: 150, maturityDate: "20260918" },
+        { conid: 111, right: "P", strike: 150, maturityDate },
+        { conid: 112, right: "C", strike: 150, maturityDate },
       ],
     });
 
@@ -125,19 +137,21 @@ describe("GET /api/ibkr/options-chain (Lot 4)", () => {
     expect(response.status).toBe(200);
     expect(body.expirations).toEqual(["SEP26", "OCT26"]);
     expect(body.selectedExpiration).toBe("SEP26");
-    expect(body.availableMaturityDates).toEqual(["20260918"]);
-    expect(body.selectedMaturityDate).toBe("20260918");
+    expect(body.availableMaturityDates).toEqual([maturityDate]);
+    expect(body.selectedMaturityDate).toBe(maturityDate);
     expect(body.underlying).toEqual({ conid: 265598, last: 155 });
     expect(body.rows).toHaveLength(1);
     expect(body.rows[0].strike).toBe(150);
     expect(body.rows[0].put.bid).toBe(1.1);
-    expect(body.rows[0].put.maturityDate).toBe("20260918");
+    expect(body.rows[0].put.maturityDate).toBe(maturityDate);
     expect(body.rows[0].call.delta).toBe(0.25);
     expect(body.targetDeltaMin).toBeCloseTo(0.15);
     expect(body.targetDeltaMax).toBeCloseTo(0.3);
   });
 
   it("distingue plusieurs échéances hebdomadaires au sein d'un même mois", async () => {
+    const earlierDate = futureMaturityDate(7);
+    const laterDate = futureMaturityDate(14);
     const user = await createUser(TEST_EMAIL, "correct-horse-battery-1");
     mockedAuth.mockResolvedValue({
       user: { id: user.id, email: user.email },
@@ -169,10 +183,10 @@ describe("GET /api/ibkr/options-chain (Lot 4)", () => {
       ok: true,
       latencyMs: 1,
       data: [
-        { conid: 111, right: "P", strike: 150, maturityDate: "20260911" },
-        { conid: 112, right: "C", strike: 150, maturityDate: "20260911" },
-        { conid: 211, right: "P", strike: 150, maturityDate: "20260918" },
-        { conid: 212, right: "C", strike: 150, maturityDate: "20260918" },
+        { conid: 111, right: "P", strike: 150, maturityDate: earlierDate },
+        { conid: 112, right: "C", strike: 150, maturityDate: earlierDate },
+        { conid: 211, right: "P", strike: 150, maturityDate: laterDate },
+        { conid: 212, right: "C", strike: 150, maturityDate: laterDate },
       ],
     });
 
@@ -188,26 +202,26 @@ describe("GET /api/ibkr/options-chain (Lot 4)", () => {
       ],
     });
 
-    // Sans maturityDate explicite : la plus proche (20260911) est retenue.
+    // Sans maturityDate explicite : la plus proche (earlierDate) est retenue.
     const defaultRequest = new Request(
       "http://localhost/api/ibkr/options-chain?symbol=AAPL&conid=265598&expiration=SEP26",
     );
     const defaultBody = await (await GET(defaultRequest)).json();
     expect(defaultBody.availableMaturityDates).toEqual([
-      "20260911",
-      "20260918",
+      earlierDate,
+      laterDate,
     ]);
-    expect(defaultBody.selectedMaturityDate).toBe("20260911");
+    expect(defaultBody.selectedMaturityDate).toBe(earlierDate);
     expect(defaultBody.rows).toHaveLength(1);
     expect(defaultBody.rows[0].put.conid).toBe(111);
     expect(defaultBody.rows[0].put.bid).toBe(1.0);
 
     // Avec maturityDate explicite : l'autre échéance est retenue à la place.
     const explicitRequest = new Request(
-      "http://localhost/api/ibkr/options-chain?symbol=AAPL&conid=265598&expiration=SEP26&maturityDate=20260918",
+      `http://localhost/api/ibkr/options-chain?symbol=AAPL&conid=265598&expiration=SEP26&maturityDate=${laterDate}`,
     );
     const explicitBody = await (await GET(explicitRequest)).json();
-    expect(explicitBody.selectedMaturityDate).toBe("20260918");
+    expect(explicitBody.selectedMaturityDate).toBe(laterDate);
     expect(explicitBody.rows[0].put.conid).toBe(211);
     expect(explicitBody.rows[0].put.bid).toBe(1.8);
   });

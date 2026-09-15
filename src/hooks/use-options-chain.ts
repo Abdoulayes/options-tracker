@@ -36,6 +36,7 @@ export type OptionsChainResponse = {
   rows: OptionsChainRow[];
   targetDeltaMin: number;
   targetDeltaMax: number;
+  feePerContract: number;
 };
 
 // Pas de polling automatique sur cet endpoint : reconstruire la chaîne

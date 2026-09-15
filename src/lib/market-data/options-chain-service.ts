@@ -249,9 +249,18 @@ export async function getOptionsChain(
     result.ok ? result.data : [],
   );
 
-  const availableMaturityDates = Array.from(
+  // Le Gateway peut renvoyer des échéances déjà passées (dernier jour de
+  // cotation d'hebdomadaires notamment) — comparaison lexicale valide sur
+  // le format YYYYMMDD. On ne les propose jamais dans le sélecteur.
+  const todayIso = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  const allMaturityDates = Array.from(
     new Set(rawContracts.map((c) => c.maturityDate)),
   ).sort();
+  const futureMaturityDates = allMaturityDates.filter(
+    (date) => date >= todayIso,
+  );
+  const availableMaturityDates =
+    futureMaturityDates.length > 0 ? futureMaturityDates : allMaturityDates;
 
   if (availableMaturityDates.length === 0) {
     return {
@@ -350,4 +359,60 @@ export async function getOptionsChain(
     selectedMaturityDate,
     rows,
   };
+}
+
+export type OptionQuoteResult =
+  | { ok: true; quote: OptionQuote }
+  | { ok: false; error: GatewayError }
+  | { ok: false; notFound: true };
+
+// Cotation d'un contrat pour une échéance réelle précise, au sein d'un mois
+// déjà résolu (Lot 5 — calculateur : changer d'échéance dans le Sheet doit
+// refléter une vraie cotation, pas un DTE inventé). Un seul appel
+// /iserver/secdef/info (déjà peu coûteux, un seul strike) suivi d'un
+// snapshot ciblé sur le conid trouvé — pas de nouvelle résolution de chaîne
+// complète.
+export async function getOptionQuoteForDate(
+  conid: string,
+  expiration: string,
+  strike: number,
+  right: "C" | "P",
+  maturityDate: string,
+): Promise<OptionQuoteResult> {
+  const infoResult = await getOptionContractInfo(conid, expiration, strike);
+  if (!infoResult.ok) {
+    return { ok: false, error: infoResult.error };
+  }
+
+  const contract = infoResult.data.find(
+    (c) => c.right === right && c.maturityDate === maturityDate,
+  );
+  if (!contract) {
+    return { ok: false, notFound: true };
+  }
+
+  const snapshotResult = await fetchMarketDataSnapshot(
+    [String(contract.conid)],
+    Object.values(MARKET_DATA_FIELD_IDS),
+  );
+  if (!snapshotResult.ok) {
+    return { ok: false, error: snapshotResult.error };
+  }
+
+  const quote = toQuote(
+    snapshotResult.data[0],
+    contract.conid,
+    contract.maturityDate,
+  );
+  if (!quote) {
+    return {
+      ok: false,
+      error: {
+        kind: "invalid_response",
+        message: "Cotation indisponible pour cette échéance.",
+      },
+    };
+  }
+
+  return { ok: true, quote };
 }

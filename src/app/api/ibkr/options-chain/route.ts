@@ -92,5 +92,6 @@ export async function GET(request: Request) {
     rows: chainResult.rows,
     targetDeltaMin: Number(settings.targetDeltaMin),
     targetDeltaMax: Number(settings.targetDeltaMax),
+    feePerContract: Number(settings.feePerContract),
   });
 }
