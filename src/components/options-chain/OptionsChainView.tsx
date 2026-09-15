@@ -78,6 +78,11 @@ export function OptionsChainView({ symbol, conid }: Props) {
       />
 
       <OptionsChainTable
+        symbol={symbol}
+        conid={conid}
+        expiration={expiration ?? data.selectedExpiration}
+        availableMaturityDates={data.availableMaturityDates}
+        feePerContract={data.feePerContract}
         rows={data.rows}
         targetDeltaMin={data.targetDeltaMin}
         targetDeltaMax={data.targetDeltaMax}
