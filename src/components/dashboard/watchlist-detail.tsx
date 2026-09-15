@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   TickerSearchInput,
@@ -249,15 +250,25 @@ function TickersTable({
                 />
               </td>
               <td className="px-3 py-2 text-right">
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="xs"
-                  disabled={removeTicker.isPending}
-                  onClick={() => removeTicker.mutate(ticker.id)}
-                >
-                  Retirer
-                </Button>
+                <div className="flex justify-end gap-2">
+                  {ticker.conid && (
+                    <Link
+                      href={`/options-chain?symbol=${ticker.symbol}&conid=${ticker.conid}`}
+                      className="text-sm text-primary underline-offset-4 hover:underline"
+                    >
+                      Options
+                    </Link>
+                  )}
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="xs"
+                    disabled={removeTicker.isPending}
+                    onClick={() => removeTicker.mutate(ticker.id)}
+                  >
+                    Retirer
+                  </Button>
+                </div>
               </td>
             </tr>
           ))}

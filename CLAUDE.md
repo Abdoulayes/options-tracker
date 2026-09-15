@@ -10,7 +10,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Lot 1 (application auth: NextAuth + TOTP 2FA) is complete and merged.**
 
-**Lot 2 (minimal IBKR Gateway client: status & heartbeat) is implemented on `feature/lot-2-ibkr-gateway`, pending the user's multi-day manual stability validation before Lot 3 starts** (per `docs/3-decoupage-par-lots.md`'s explicit gate on this lot). Validated manually against the Client Portal Gateway (`clientportal.gw`) on Paper Trading, not the classic IB Gateway/TWS desktop app — those are different IBKR products; this app only ever talks REST/HTTPS to the Client Portal Gateway, never the TWS socket API.
+**Lot 2 (minimal IBKR Gateway client: status & heartbeat) is complete and merged.** Validated manually against the Client Portal Gateway (`clientportal.gw`) on Paper Trading, not the classic IB Gateway/TWS desktop app — those are different IBKR products; this app only ever talks REST/HTTPS to the Client Portal Gateway, never the TWS socket API.
+
+**Lot 3 (Watchlist CRUD, ticker search, CSV import/export) is complete and merged.**
+
+**Lot 4 (market data & options chain) is implemented on `feature/lot-4-options-chain`, manually validated by the user across several watchlist tickers (CD, CDE, PYPL, MSFT, GOOG).** Notable corrections made during manual validation, all driven by real Gateway behavior rather than the CPAPI docs alone:
+- `/iserver/marketdata/snapshot` only populates requested fields from the **second** call onward for a given conid (the first call just primes the subscription) — `src/lib/market-data/snapshot.ts` always calls it twice.
+- The Gateway rate-limits aggressively in practice (429s observed well under the ~10 req/s figure floated in earlier docs, especially on `/iserver/secdef/info`) — options-chain resolution is capped to the 16 strikes nearest the current price, resolved strictly sequentially with a delay between calls, with retry-with-backoff on 429 in `callGateway` (`src/lib/ibkr-gateway/client.ts`).
+- An IBKR options "month" (e.g. `SEP26`) can bundle several distinct real expiration dates when the underlying has weekly options — confirmed live on CDE (two Fridays under one month). `getOptionsChain` groups contracts by their actual `maturityDate` rather than by month, and the UI shows a secondary "Échéance" selector when a month resolves to more than one date.
+- **Known open item, not a code bug**: the IV and Open Interest columns are frequently empty. Diagnosed live against the Gateway outside US market hours — the raw snapshot response omits those fields entirely (not just null) whenever the underlying has no active trading session, along with volume on illiquid contracts. The field ids used (`MARKET_DATA_FIELD_IDS.impliedVolatility` = `"7283"`, `.openInterest` = `"7633"` in `client.ts`) are unverified during live market hours — re-check them against a real snapshot taken while the US market is open, and correct if still empty.
+
+Options chain requests intentionally do **not** poll/auto-refresh (`src/hooks/use-options-chain.ts`) — rebuilding a chain is expensive (many Gateway calls) and periodic refetching was the main source of 429s during validation.
 
 **Deviations from the specs, decided explicitly for this project (not to be second-guessed in later lots):**
 - The scaffold runs **Next.js 16 / React 19 / Tailwind v4** (already installed) rather than the spec's Next 14 / Tailwind 3 target — kept because it's a newer superset of what's needed, not downgraded.
@@ -62,6 +72,8 @@ npm run format           # Prettier — write
 npm run format:check     # Prettier — check only
 npm run prisma:generate  # regenerate the Prisma client
 npm run prisma:migrate   # create/apply a dev migration (needs DATABASE_URL, e.g. via docker-compose)
+npm run test             # run the full Vitest suite once
+npm run test:watch       # Vitest in watch mode
 ```
 
-There is no test runner configured yet — that needs to be set up per `docs/2-spec-technique.md` section 14 (introduced alongside the first testable logic, in Lot 5 at the latest).
+Integration tests (`tests/integration/`) hit the local Postgres from `docker-compose.yml` — start it first.
